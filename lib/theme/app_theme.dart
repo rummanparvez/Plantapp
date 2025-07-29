@@ -163,7 +163,7 @@ class AppTheme {
       ),
       behavior: SnackBarBehavior.floating,
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: defaultBorderRadius,

@@ -1,0 +1,57 @@
+name: iOS-ipa-build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write      # Needed for repository content write access
+  releases: write      # Needed to upload assets to github release
+  packages: read       # Read-only access to packages (adjust if needed)
+
+jobs:
+  build-ios:
+    name: 🎉 iOS Build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Prepare CocoaPods (for iOS dependencies)
+        run: |
+          cd ios
+          pod install
+          pod repo update
+
+      - name: Build iOS release (no code signing)
+        run: flutter build ios --release --no-codesign
+
+      - name: Create Payload directory
+        run: mkdir -p Payload
+        working-directory: build/ios/iphoneos
+
+      - name: Move Runner.app to Payload
+        run: mv Runner.app Payload/
+        working-directory: build/ios/iphoneos
+
+      - name: Package Payload as IPA
+        run: zip -qq -r -9 Plantzify.ipa Payload
+        working-directory: build/ios/iphoneos
+
+      - name: Upload Plantzify IPA to GitHub Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/ios/iphoneos/Plantzify.ipa
+          asset_name: Plantzify.ipa
+          tag: v1.0
+          overwrite: true
+          body: "This is the first release of Plantzify iOS IPA built via GitHub Actions."
